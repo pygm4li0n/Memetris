@@ -92,7 +92,7 @@ const LB_KEY="memetris_lb_v1",SKIN_KEY="memetris_skin_v1",TINT_KEY="memetris_tin
 const WORDS=["WAGMI","LFG","GIGACHAD","SEND IT","NUMBER GO UP","DIAMOND HANDS","BASED","TO THE MOON","HODL","LEGEND"];
 /* =========================================== */
 
-const COLS=10,ROWS=20,S=120;
+const COLS=8,ROWS=16,S=160;
 const $=id=>document.getElementById(id);
 const board=$("board"),bx=board.getContext("2d");
 const hx=$("hold").getContext("2d"),nx=$("next").getContext("2d");
@@ -421,11 +421,17 @@ function layout(){
   const W=innerWidth,H=innerHeight,wide=W>=720;
   const bh=wide?66:58,top=Math.max(8,0)+bh+14,bot=wide?16:88;
   document.documentElement.style.setProperty("--bh",bh+"px");
+  
   const availH=H-top-bot;
-  const h=Math.floor(Math.max(200,Math.min(availH,(W-12)*2)));const w=Math.floor(h/2);
+  // Expands the board to fill almost all screen width/height
+  const h=Math.floor(Math.min(availH,(W-4)*2));const w=Math.floor(h/2);
   const left=Math.floor((W-w)/2),t=Math.floor(top+(availH-h)/2);
+  
   const wr=$("wrap");wr.style.left=left+"px";wr.style.top=t+"px";wr.style.width=w+"px";wr.style.height=h+"px";
-  const dpr=Math.min(devicePixelRatio||1,2.5);board.width=Math.round(w*dpr);board.height=Math.round(h*dpr);k=board.width/1200;cellPx=w/COLS;
+  const dpr=Math.min(devicePixelRatio||1,2.5);board.width=Math.round(w*dpr);board.height=Math.round(h*dpr);
+  
+  k=board.width/(COLS*S);cellPx=w/COLS;
+  
   const hw=Math.min(W-12,Math.max(w,wide?420:340));$("hud").style.width=hw+"px";
   $("hold").style.width=bh+"px";$("next").style.width=Math.round(bh*336/128)+"px";
   bgc.width=Math.ceil(W/1.5);bgc.height=Math.ceil(H/1.5);buildSun();
@@ -451,8 +457,8 @@ function drawMini(c,t,cx,cy,cs){
   m.forEach((r,y)=>r.forEach((v,x)=>{if(v)cell(c,t,ox+(x-x0)*cs,oy+(y-y0)*cs,cs)}));
 }
 function drawSide(){
-  hx.clearRect(0,0,512,512);if(holdT>=0){hx.globalAlpha=canHold?1:.35;drawMini(hx,holdT,256,280,104);hx.globalAlpha=1}
-  nx.clearRect(0,0,1344,512);if(queue.length)for(let i=0;i<3;i++)drawMini(nx,queue[i],224+i*448,280,88);
+  hx.clearRect(0,0,512,512);if(holdT>=0){hx.globalAlpha=canHold?1:.35;drawMini(hx,holdT,256,280,140);hx.globalAlpha=1}
+  nx.clearRect(0,0,1344,512);if(queue.length)for(let i=0;i<3;i++)drawMini(nx,queue[i],224+i*448,280,120);
 }
 $("holdBox").onclick=hold;$("holdBtn").addEventListener("pointerdown",e=>{e.preventDefault();hold()});
 $("dropBtn").addEventListener("pointerdown",e=>{e.preventDefault();hardDrop()});
@@ -500,16 +506,17 @@ function update(dt){
   if(collide(cur.m,cur.x,cur.y+1)){lockT+=dt;if(lockT>=LOCK||(resets>=15&&lockT>=120)){lock();ui()}}else lockT=0;
 }
 function render(dt){
-  bx.setTransform(k,0,0,k,0,0);bx.clearRect(0,0,1200,2400);bx.save();
+  const BW=COLS*S, BH=ROWS*S;
+  bx.setTransform(k,0,0,k,0,0);bx.clearRect(0,0,BW,BH);bx.save();
   if(shake>.3){bx.translate((Math.random()-.5)*shake*4,(Math.random()-.5)*shake*4);shake*=.86}else shake=0;
-  if(skins.length){bx.globalAlpha=.06;bx.drawImage(skins[2],0,600,1200,1200);bx.globalAlpha=1}
+  if(skins.length){bx.globalAlpha=.06;bx.drawImage(skins[2],0,BH/4,BW,BW);bx.globalAlpha=1}
   bx.lineWidth=4;bx.strokeStyle="rgba(255,255,255,.05)";bx.beginPath();
-  for(let x=1;x<COLS;x++){bx.moveTo(x*S+.5,0);bx.lineTo(x*S+.5,2400)}
-  for(let y=1;y<ROWS;y++){bx.moveTo(0,y*S+.5);bx.lineTo(1200,y*S+.5)}
+  for(let x=1;x<COLS;x++){bx.moveTo(x*S+.5,0);bx.lineTo(x*S+.5,BH)}
+  for(let y=1;y<ROWS;y++){bx.moveTo(0,y*S+.5);bx.lineTo(BW,y*S+.5)}
   bx.stroke();
   if(grid&&sprites.length){
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(grid[y][x])cell(bx,grid[y][x]-1,x*S,y*S,S);
-    if(clearing){const p=clearT/CLEAR_MS;clearing.forEach(y=>{bx.fillStyle=`rgba(255,255,255,${.9*(1-p)})`;bx.fillRect(0,y*S,1200,S)})}
+    if(clearing){const p=clearT/CLEAR_MS;clearing.forEach(y=>{bx.fillStyle=`rgba(255,255,255,${.9*(1-p)})`;bx.fillRect(0,y*S,BW,S)})}
     if(cur&&state!=="over"){const gy=ghostY();
       for(let y=0;y<cur.m.length;y++)for(let x=0;x<cur.m.length;x++)if(cur.m[y][x]){
         if(gy+y>=0)cell(bx,cur.t,(cur.x+x)*S,(gy+y)*S,S,.2);
@@ -518,7 +525,7 @@ function render(dt){
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.88;p.l-=dt/700;
     if(p.l<=0){particles.splice(i,1);continue}bx.globalAlpha=p.l;bx.fillStyle=p.c;bx.fillRect(p.x,p.y,p.s,p.s)}
   bx.globalAlpha=1;
-  if(flash>.02){bx.fillStyle=`rgba(255,79,216,${flash*.35})`;bx.fillRect(0,0,1200,2400);flash*=.9}
+  if(flash>.02){bx.fillStyle=`rgba(255,79,216,${flash*.35})`;bx.fillRect(0,0,BW,BH);flash*=.9}
   bx.restore();
 }
 
