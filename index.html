@@ -104,7 +104,7 @@ const TYPES=["I","O","T","S","Z","J","L"];
 const COLORS=["#22d3ee","#facc15","#a855f7","#22c55e","#ef4444","#3b82f6","#f97316"];
 
 /* ---------- skins: one image per piece — original coin art by default, or your own ---------- */
-const SKINS_KEY="memetris_skins_v2",TINT2_KEY="memetris_glow_v3";
+const SKINS_KEY="memetris_skins_v3",TINT2_KEY="memetris_glow_v4";
 let skins=[],defaults=[],custom=Array(7).fill(null),sprites=[],tint=.6,fileTarget=null;
 try{const t=localStorage.getItem(TINT2_KEY);if(t!==null)tint=+t/100}catch(e){}
 
@@ -371,13 +371,31 @@ function wireSkin(){
 const HINT=`<p class="hint">TAP / CLICK = ROTATE · DRAG or ← → = MOVE<br>DRAG DOWN = SOFT DROP · ⤓ / SPACE = DROP (0.5s TO SLIDE · TAP AGAIN TO LOCK)<br>HOLD BOX / C = HOLD · P = PAUSE · M = MUTE</p>`;
 function showMenu(){
   state="menu";ov.classList.remove("hide");
-  ov.innerHTML=`<div class="card"><h1>${esc(TITLE)}</h1><p class="sub">THE MEMES ARE THE BLOCKS · RETRO EDITION 2026</p><button class="btn" id="go">PLAY</button>${skinHTML()}${lbHTML()}${HINT}</div>`;
-  $("go").onclick=newGame;wireSkin();
+  ov.innerHTML=`<div class="card" style="gap:30px">
+    <div style="text-align:center">
+      <h1 style="font-size:clamp(60px,18vw,110px);line-height:1;margin-bottom:0">${esc(TITLE)}</h1>
+      <p class="sub" style="font-size:13px;letter-spacing:.25em;margin-top:14px">THE MEMES ARE THE BLOCKS</p>
+    </div>
+    <div class="slots" style="width:100%; max-width:380px; padding:10px 0;">
+      ${[0,1,2,3,4,5,6].map(i=>`<canvas class="slot" id="slot${i}" data-i="${i}"></canvas>`).join("")}
+    </div>
+    <button class="btn" id="go" style="font-size:clamp(30px,8vw,44px);padding:22px 80px;border-radius:24px;box-shadow:0 8px 0 #7c1d6f, 0 0 60px rgba(255,62,165,.6)">PLAY</button>
+  </div>`;
+  $("go").onclick=newGame;
+  drawSkinSlots();
 }
 function showPause(){
   ov.classList.remove("hide");
-  ov.innerHTML=`<div class="card"><h2>PAUSED</h2><button class="btn" id="go">RESUME</button><button class="btn ghost" id="rs">RESTART</button>${skinHTML()}${HINT}</div>`;
-  $("go").onclick=togglePause;$("rs").onclick=newGame;wireSkin();
+  ov.innerHTML=`<div class="card" style="gap:20px">
+    <h2 style="font-size:clamp(40px,12vw,64px);margin-bottom:10px">PAUSED</h2>
+    <div class="slots" style="width:100%; max-width:380px; padding:0 0 10px 0;">
+      ${[0,1,2,3,4,5,6].map(i=>`<canvas class="slot" id="slot${i}" data-i="${i}"></canvas>`).join("")}
+    </div>
+    <button class="btn" id="go" style="font-size:32px;padding:16px 60px;margin-bottom:8px">RESUME</button>
+    <button class="btn ghost" id="rs" style="font-size:16px;padding:12px 30px">RESTART</button>
+  </div>`;
+  $("go").onclick=togglePause;$("rs").onclick=newGame;
+  drawSkinSlots();
 }
 function showOver(){
   ov.classList.remove("hide");
@@ -440,7 +458,7 @@ $("holdBox").onclick=hold;$("holdBtn").addEventListener("pointerdown",e=>{e.prev
 $("dropBtn").addEventListener("pointerdown",e=>{e.preventDefault();hardDrop()});
 
 /* animated background */
-const floaters=Array.from({length:16},()=>({i:(Math.random()*7)|0,x:Math.random(),y:Math.random(),s:40+Math.random()*90,r:Math.random()*6.28,vr:(Math.random()-.5)*.004,vy:.00006+Math.random()*.00012,a:.04+Math.random()*.07}));
+const floaters=Array.from({length:20},()=>({i:(Math.random()*7)|0,x:Math.random(),y:Math.random(),s:120+Math.random()*180,r:Math.random()*6.28,vr:(Math.random()-.5)*.004,vy:.00006+Math.random()*.00012,a:.15+Math.random()*.15}));
 let sunC=null,gridT=0;
 const stars=Array.from({length:80},()=>({x:Math.random(),y:Math.random()*.58,s:Math.random()*1.3+.4,p:Math.random()*6.28}));
 function buildSun(){
@@ -462,7 +480,7 @@ function drawBgScene(dt){
   for(let j=0;j<12;j++){const p=((j+gridT*12)%12)/12,y=hz+(H-hz)*p*p;gx.strokeStyle=`rgba(255,62,165,${.12+.6*p})`;gx.beginPath();gx.moveTo(0,y);gx.lineTo(W,y);gx.stroke()}
   gx.save();gx.shadowColor="#ff3ea5";gx.shadowBlur=14;gx.fillStyle="#ff9ad5";gx.fillRect(0,hz-1,W,2);gx.restore();
   if(skins.length)floaters.forEach(f=>{f.y-=f.vy*dt;f.r+=f.vr*dt;if(f.y<-.2){f.y=1.2;f.x=Math.random()}
-    const sz=f.s/1.5;gx.save();gx.globalAlpha=f.a*1.2;gx.translate(f.x*W,f.y*H);gx.rotate(f.r);gx.drawImage(skins[f.i],-sz/2,-sz/2,sz,sz);gx.restore()});
+    const sz=f.s;gx.save();gx.globalAlpha=f.a;gx.translate(f.x*W,f.y*H);gx.rotate(f.r);gx.drawImage(skins[f.i],-sz/2,-sz/2,sz,sz);gx.restore()});
   if(pulse>.02){const gp=gx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.7);gp.addColorStop(0,`rgba(255,79,216,${pulse*.3})`);gp.addColorStop(1,"transparent");gx.fillStyle=gp;gx.fillRect(0,0,W,H);pulse*=.93}
 }
 
